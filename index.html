@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doctor Clinical Assistant</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+<h1>Doctor Clinical Assistant</h1>
+<input type="text" placeholder="Search calculator, disease, drug..." onkeyup="searchApp()">
+</header>
+
+<nav>
+<button onclick="showScores()">Clinical Scores</button>
+<button onclick="showGuidelines()">Guidelines</button>
+<button onclick="showDrugs()">Drug Dosing</button>
+<button onclick="showPediatric()">Pediatric</button>
+<button onclick="showAI()">AI Diagnosis</button>
+</nav>
+
+<div id="content"></div>
+
+<script src="app.js"></script>
+<script src="calculators/gcs.js"></script>
+<script src="calculators/curb65.js"></script>
+<script src="calculators/cha2ds2vasc.js"></script>
+
+</body>
+</html>
