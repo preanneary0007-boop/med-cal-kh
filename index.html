@@ -1,33 +1,897 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Doctor Clinical Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a1628">
+<meta name="description" content="Medical Clinical Score Calculator — Bilingual KH/EN">
+<title>MedScore Global</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a1628;
+  --bg2: #0f1e35;
+  --bg3: #162542;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8edf5;
+  --text2: #8a9ab5;
+  --text3: #506080;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --orange: #f97316;
+  --purple: #8b5cf6;
+  --teal: #14b8a6;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 12px;
+  --radius-lg: 18px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,22,40,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.topbar-logo { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; }
+.topbar-logo span { color: var(--accent2); }
+.lang-btn {
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text2); font-family: var(--font); font-size: 12px;
+  padding: 5px 11px; border-radius: 20px; cursor: pointer;
+  transition: all .2s;
+}
+.lang-btn:hover { color: var(--text); border-color: var(--accent); }
+.lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── SEARCH ── */
+.search-wrap { padding: 14px 18px 8px; }
+.search-box {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 11px 15px;
+  transition: border-color .2s;
+}
+.search-box:focus-within { border-color: var(--accent); }
+.search-icon { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+.search-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font); font-size: 14px;
+}
+.search-input::placeholder { color: var(--text3); }
+
+/* ── CATEGORIES ── */
+.cats { display: flex; gap: 7px; padding: 6px 18px 12px; overflow-x: auto; scrollbar-width: none; }
+.cats::-webkit-scrollbar { display: none; }
+.cat-pill {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border2); color: var(--text2);
+  background: var(--bg2); transition: all .2s; white-space: nowrap;
+}
+.cat-pill.active, .cat-pill:hover { color: #fff; border-color: transparent; }
+.cat-pill[data-cat="all"].active { background: var(--accent); }
+.cat-pill[data-cat="cardio"].active { background: #dc2626; }
+.cat-pill[data-cat="neuro"].active { background: var(--purple); }
+.cat-pill[data-cat="sepsis"].active { background: var(--orange); }
+.cat-pill[data-cat="pulm"].active { background: var(--teal); }
+.cat-pill[data-cat="gi"].active { background: #84cc16; }
+.cat-pill[data-cat="renal"].active { background: #06b6d4; }
+.cat-pill[data-cat="surgery"].active { background: #ec4899; }
+.cat-pill[data-cat="psych"].active { background: var(--yellow); }
+.cat-pill[data-cat="lab"].active { background: #6366f1; }
+.cat-pill[data-cat="obgyn"].active { background: #f43f5e; }
+
+/* ── SCORE LIST ── */
+.score-list { flex: 1; padding: 0 18px 100px; display: flex; flex-direction: column; gap: 8px; }
+.score-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px;
+  cursor: pointer; transition: all .22s;
+  display: flex; align-items: center; gap: 14px;
+}
+.score-card:hover { border-color: var(--border2); background: var(--bg3); transform: translateY(-1px); }
+.score-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.score-body { flex: 1; min-width: 0; }
+.score-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.score-use { font-size: 12px; color: var(--text2); line-height: 1.4; }
+.score-arrow { color: var(--text3); font-size: 18px; flex-shrink: 0; }
+.no-results { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px); z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 24px 24px 0 0; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  transform: translateY(60px); transition: transform .3s ease;
+  padding-bottom: 30px;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  position: sticky; top: 0; background: var(--bg2);
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.modal-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.modal-title { flex: 1; }
+.modal-title h2 { font-size: 16px; font-weight: 600; }
+.modal-title p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.modal-body { padding: 20px; }
+.info-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 20px;
+}
+.info-box h4 { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.info-box p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+.field-group { margin-bottom: 18px; }
+.field-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; display: block; }
+.field-label small { font-weight: 400; color: var(--text3); font-size: 11px; margin-left: 4px; }
+
+.radio-group { display: flex; flex-direction: column; gap: 7px; }
+.radio-option {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; cursor: pointer;
+  transition: all .18s;
+}
+.radio-option:hover { border-color: var(--border2); }
+.radio-option.selected { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+.radio-option input { display: none; }
+.radio-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border2); flex-shrink: 0;
+  transition: all .18s;
+}
+.radio-option.selected .radio-dot { border-color: var(--accent); background: var(--accent); }
+.radio-text { flex: 1; }
+.radio-text .main { font-size: 13px; color: var(--text); }
+.radio-text .sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.radio-pts { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+.radio-option.selected .radio-pts { color: var(--accent2); }
+
+.number-input-wrap { display: flex; align-items: center; gap: 8px; }
+.number-input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 11px 14px;
+  color: var(--text); font-family: var(--font); font-size: 14px;
+  outline: none; transition: border-color .2s;
+}
+.number-input:focus { border-color: var(--accent); }
+.number-unit { font-size: 12px; color: var(--text3); }
+
+.calc-btn {
+  width: 100%; padding: 15px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius); font-family: var(--font);
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: all .2s; margin-top: 4px;
+}
+.calc-btn:hover { background: #2563eb; transform: translateY(-1px); }
+.calc-btn:active { transform: translateY(0); }
+
+/* ── RESULT ── */
+.result-box {
+  border-radius: var(--radius-lg); padding: 22px;
+  text-align: center; margin-top: 20px;
+  border: 1px solid transparent; display: none;
+}
+.result-box.show { display: block; }
+.result-score { font-family: var(--mono); font-size: 48px; font-weight: 500; margin-bottom: 6px; }
+.result-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.result-interp { font-size: 13px; line-height: 1.6; opacity: .85; }
+.result-action { font-size: 12px; margin-top: 12px; opacity: .7; font-style: italic; }
+
+.result-low { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+.result-low .result-score, .result-low .result-label { color: var(--green); }
+.result-mod { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+.result-mod .result-score, .result-mod .result-label { color: var(--yellow); }
+.result-high { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+.result-high .result-score, .result-high .result-label { color: var(--red); }
+.result-info { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); }
+.result-info .result-score, .result-info .result-label { color: var(--accent2); }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: rgba(10,22,40,0.95); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex; padding: 10px 0 16px;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; cursor: pointer; color: var(--text3); transition: color .2s;
+  font-size: 10px; font-weight: 500;
+}
+.nav-item.active { color: var(--accent2); }
+.nav-icon { font-size: 22px; }
+
+/* ── CATEGORY COLOR DOTS ── */
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+</style>
 </head>
 <body>
+<div class="app">
 
-<header>
-<h1>Doctor Clinical Assistant</h1>
-<input type="text" placeholder="Search calculator, disease, drug..." onkeyup="searchApp()">
-</header>
+  <div class="topbar">
+    <div class="topbar-logo">Med<span>Score</span> <span style="color:var(--text3);font-weight:400;font-size:12px">Global</span></div>
+    <button class="lang-btn active" id="btnKH" onclick="setLang('kh')">ខ្មែរ</button>
+    <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+  </div>
 
-<nav>
-<button onclick="showScores()">Clinical Scores</button>
-<button onclick="showGuidelines()">Guidelines</button>
-<button onclick="showDrugs()">Drug Dosing</button>
-<button onclick="showPediatric()">Pediatric</button>
-<button onclick="showAI()">AI Diagnosis</button>
-</nav>
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="ស្វែងរក Score... / Search score..." oninput="filterScores()">
+    </div>
+  </div>
 
-<div id="content"></div>
+  <div class="cats" id="catBar"></div>
+  <div class="score-list" id="scoreList"></div>
 
-<script src="app.js"></script>
-<script src="calculators/gcs.js"></script>
-<script src="calculators/curb65.js"></script>
-<script src="calculators/cha2ds2vasc.js"></script>
+  <div class="bottom-nav">
+    <div class="nav-item active"><div class="nav-icon">🧮</div><span id="nav1">គណនា</span></div>
+    <div class="nav-item"><div class="nav-icon">📋</div><span id="nav2">ប្រវត្តិ</span></div>
+    <div class="nav-item"><div class="nav-icon">📚</div><span id="nav3">ព័ត៌មាន</span></div>
+    <div class="nav-item"><div class="nav-icon">⚙️</div><span id="nav4">ការកំណត់</span></div>
+  </div>
+</div>
 
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-icon" id="mIcon"></div>
+      <div class="modal-title">
+        <h2 id="mTitle"></h2>
+        <p id="mSubtitle"></p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+// ── LANGUAGE ──
+let lang = 'kh';
+function setLang(l) {
+  lang = l;
+  document.getElementById('btnKH').classList.toggle('active', l==='kh');
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('nav1').textContent = l==='kh' ? 'គណនា' : 'Calculate';
+  document.getElementById('nav2').textContent = l==='kh' ? 'ប្រវត្តិ' : 'History';
+  document.getElementById('nav3').textContent = l==='kh' ? 'ព័ត៌មាន' : 'Info';
+  document.getElementById('nav4').textContent = l==='kh' ? 'ការកំណត់' : 'Settings';
+  document.getElementById('searchInput').placeholder = l==='kh' ? 'ស្វែងរក Score...' : 'Search score...';
+  renderList();
+}
+
+// ── DATA ──
+const categories = [
+  { id:'all',     icon:'🔬', kh:'ទាំងអស់',    en:'All' },
+  { id:'cardio',  icon:'❤️',  kh:'បេះដូង',     en:'Cardio' },
+  { id:'neuro',   icon:'🧠', kh:'សរសៃប្រសាទ', en:'Neuro' },
+  { id:'sepsis',  icon:'🔥', kh:'Sepsis/ICU', en:'Sepsis/ICU' },
+  { id:'pulm',    icon:'🫁', kh:'សួត',         en:'Pulm' },
+  { id:'gi',      icon:'🏥', kh:'រលាក GI',    en:'GI' },
+  { id:'renal',   icon:'💧', kh:'តម្រងនោម',   en:'Renal' },
+  { id:'surgery', icon:'🔪', kh:'វះកាត់',      en:'Surgery' },
+  { id:'psych',   icon:'🧩', kh:'សុខភាពចិត្ត', en:'Psych' },
+  { id:'lab',     icon:'🔢', kh:'Lab/Calc',   en:'Lab/Calc' },
+  { id:'obgyn',   icon:'🤰', kh:'OB/GYN',     en:'OB/GYN' },
+];
+const catColors = {
+  cardio:'#dc2626',neuro:'#8b5cf6',sepsis:'#f97316',
+  pulm:'#14b8a6',gi:'#84cc16',renal:'#06b6d4',
+  surgery:'#ec4899',psych:'#f59e0b',lab:'#6366f1',obgyn:'#f43f5e'
+};
+
+const scores = [
+  // CARDIOLOGY
+  {
+    id:'heart', cat:'cardio', icon:'❤️',
+    name:'HEART Score',
+    kh_use:'វាស់ risk ACS ក្នុង chest pain',
+    en_use:'Risk stratification for ACS in chest pain',
+    kh_desc:'ប្រើក្នុង Emergency Department ដើម្បីវាស់ថា chest pain មកពី ACS ឬអត់',
+    en_desc:'Used in Emergency Department to assess risk of major adverse cardiac events (MACE) in chest pain patients.',
+    fields:[
+      {id:'h',label_kh:'ប្រវត្តិ (History)',label_en:'History',
+       opts:[{v:0,kh:'Low suspicion',en:'Low suspicion'},{v:1,kh:'Moderate suspicion',en:'Moderate suspicion'},{v:2,kh:'High suspicion',en:'High suspicion'}]},
+      {id:'e',label_kh:'ECG',label_en:'ECG',
+       opts:[{v:0,kh:'Normal',en:'Normal'},{v:1,kh:'Non-specific repolarization',en:'Non-specific repolarization'},{v:2,kh:'Significant ST deviation',en:'Significant ST deviation'}]},
+      {id:'a',label_kh:'អាយុ (Age)',label_en:'Age',
+       opts:[{v:0,kh:'< 45 ឆ្នាំ',en:'< 45 years'},{v:1,kh:'45–64 ឆ្នាំ',en:'45–64 years'},{v:2,kh:'≥ 65 ឆ្នាំ',en:'≥ 65 years'}]},
+      {id:'r',label_kh:'Risk Factors',label_en:'Risk Factors',
+       opts:[{v:0,kh:'គ្មាន',en:'No known risk factors'},{v:1,kh:'1–2 risk factors',en:'1–2 risk factors'},{v:2,kh:'≥ 3 risk factors / History of atherosclerosis',en:'≥ 3 factors or atherosclerosis'}]},
+      {id:'t',label_kh:'Troponin',label_en:'Troponin',
+       opts:[{v:0,kh:'≤ ULN',en:'≤ Normal limit'},{v:1,kh:'1–2× ULN',en:'1–2× upper normal'},{v:2,kh:'> 2× ULN',en:'> 2× upper normal'}]},
+    ],
+    interpret(s){
+      if(s<=3) return {cls:'low',kh_lbl:'Low Risk',en_lbl:'Low Risk',kh_i:'MACE risk < 2% — អាចផ្ញើ귀 ត្រឡប់ ជាមួយ follow-up',en_i:'MACE risk < 2% — safe for early discharge with follow-up'};
+      if(s<=6) return {cls:'mod',kh_lbl:'Moderate Risk',en_lbl:'Moderate Risk',kh_i:'MACE risk 12–65% — ត្រូវ observe ១២-២៤ ម៉ោង',en_i:'MACE risk 12–65% — observe 12–24h, serial troponins'};
+      return {cls:'high',kh_lbl:'High Risk',en_lbl:'High Risk',kh_i:'MACE risk > 65% — ត្រូវ admit ភ្លាម ជាមួយ cardiology',en_i:'MACE risk > 65% — admit immediately, cardiology consult'};
+    }
+  },
+  {
+    id:'chads', cat:'cardio', icon:'❤️',
+    name:'CHA₂DS₂-VASc',
+    kh_use:'Stroke risk ក្នុង Atrial Fibrillation',
+    en_use:'Stroke risk in atrial fibrillation',
+    kh_desc:'គណនា annual stroke risk ក្នុង non-valvular AF ដើម្បីសម្រេចចិត្ត anticoagulation',
+    en_desc:'Calculates annual stroke risk in non-valvular AF to guide anticoagulation therapy.',
+    fields:[
+      {id:'c',label_kh:'Heart Failure',label_en:'Congestive Heart Failure',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'h',label_kh:'Hypertension',label_en:'Hypertension',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'a2',label_kh:'អាយុ ≥ 75',label_en:'Age ≥ 75',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:2,kh:'មាន (+2)',en:'Yes (+2)'}]},
+      {id:'d',label_kh:'Diabetes',label_en:'Diabetes Mellitus',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'s2',label_kh:'Stroke/TIA ពីមុន',label_en:'Prior Stroke/TIA',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:2,kh:'មាន (+2)',en:'Yes (+2)'}]},
+      {id:'v',label_kh:'Vascular Disease',label_en:'Vascular Disease',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'a',label_kh:'អាយុ 65–74',label_en:'Age 65–74',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'sc',label_kh:'ភេទស្ត្រី (Female)',label_en:'Female Sex',opts:[{v:0,kh:'ប្រុស',en:'Male'},{v:1,kh:'ស្ត្រី',en:'Female'}]},
+    ],
+    interpret(s){
+      if(s===0) return {cls:'low',kh_lbl:'Risk ទាប',en_lbl:'Low Risk',kh_i:'Annual stroke risk ~0% — Anticoagulation មិនចំាបាច់',en_i:'Annual stroke risk ~0% — Anticoagulation not recommended'};
+      if(s===1) return {cls:'mod',kh_lbl:'Risk មធ្យម',en_lbl:'Moderate Risk',kh_i:'Annual stroke risk ~1.3% — ពិចារណា anticoagulation',en_i:'Annual stroke risk ~1.3% — Consider anticoagulation'};
+      return {cls:'high',kh_lbl:'Risk ខ្ពស់',en_lbl:'High Risk',kh_i:`Annual stroke risk ~${[0,0,2.2,3.2,4.0,6.7,9.8,9.6,12.5][Math.min(s,8)]||'>9'}% — ត្រូវ anticoagulation`,en_i:`Annual stroke risk ~${[0,0,2.2,3.2,4.0,6.7,9.8,9.6,12.5][Math.min(s,8)]||'>9'}% — Anticoagulation recommended`};
+    }
+  },
+  {
+    id:'hasbled', cat:'cardio', icon:'❤️',
+    name:'HAS-BLED Score',
+    kh_use:'Bleeding risk ពេល anticoagulation',
+    en_use:'Bleeding risk during anticoagulation',
+    kh_desc:'វាស់ risk ហូរឈាម ក្នុង 1 ឆ្នាំ សម្រាប់ AF patients ដែលទទួល anticoagulation',
+    en_desc:'Estimates 1-year major bleeding risk in AF patients on anticoagulation.',
+    fields:[
+      {id:'h',label_kh:'Hypertension (SBP>160)',label_en:'Hypertension (SBP>160)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'a',label_kh:'Renal/Liver disease',label_en:'Abnormal Renal/Liver',opts:[{v:0,kh:'គ្មាន',en:'None'},{v:1,kh:'1 ប្រភេទ',en:'1 present'},{v:2,kh:'ទាំង 2',en:'Both'}]},
+      {id:'s',label_kh:'Stroke ពីមុន',label_en:'Prior Stroke',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'b',label_kh:'Bleeding history/tendency',label_en:'Bleeding history',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'l',label_kh:'Labile INR',label_en:'Labile INR',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'e',label_kh:'អាយុ > 65',label_en:'Elderly (>65)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន',en:'Yes'}]},
+      {id:'d',label_kh:'Drugs/Alcohol',label_en:'Drugs/Alcohol use',opts:[{v:0,kh:'គ្មាន',en:'None'},{v:1,kh:'1 ប្រភេទ',en:'1 present'},{v:2,kh:'ទាំង 2',en:'Both'}]},
+    ],
+    interpret(s){
+      if(s<3) return {cls:'low',kh_lbl:'Risk ទាប',en_lbl:'Low Bleeding Risk',kh_i:'ហូរឈាម < 1% ក្នុង 1 ឆ្នាំ — anticoagulation សុវត្ថិភាព',en_i:'Major bleed < 1%/yr — anticoagulation generally safe'};
+      if(s===3) return {cls:'mod',kh_lbl:'Risk មធ្យម',en_lbl:'Moderate Bleeding Risk',kh_i:'ហូរឈាម ~3.74% ក្នុង 1 ឆ្នាំ — ត្រូវ monitor',en_i:'Major bleed ~3.74%/yr — monitor closely'};
+      return {cls:'high',kh_lbl:'Risk ខ្ពស់',en_lbl:'High Bleeding Risk',kh_i:'ហូរឈាម > 4% ក្នុង 1 ឆ្នាំ — ចំបាច់ modify risk factors',en_i:'Major bleed > 4%/yr — address modifiable bleeding risks'};
+    }
+  },
+  {
+    id:'grace', cat:'cardio', icon:'❤️',
+    name:'GRACE Score',
+    kh_use:'Mortality risk ក្នុង ACS',
+    en_use:'In-hospital & 6-month mortality in ACS',
+    kh_desc:'ប្រើក្នុង ACS ដើម្បីព្យាករ in-hospital mortality និងជួយសម្រេចចិត្ត invasive strategy',
+    en_desc:'Predicts in-hospital and 6-month mortality in ACS; guides invasive vs conservative strategy.',
+    fields:[
+      {id:'age',label_kh:'អាយុ (ឆ្នាំ)',label_en:'Age (years)',type:'number',unit:'years',min:18,max:120},
+      {id:'hr',label_kh:'Heart Rate (bpm)',label_en:'Heart Rate (bpm)',type:'number',unit:'bpm',min:0,max:300},
+      {id:'sbp',label_kh:'Systolic BP (mmHg)',label_en:'Systolic BP (mmHg)',type:'number',unit:'mmHg',min:0,max:300},
+      {id:'cr',label_kh:'Creatinine (mg/dL)',label_en:'Creatinine (mg/dL)',type:'number',unit:'mg/dL',min:0,max:20},
+      {id:'k',label_kh:'Killip Class',label_en:'Killip Class',
+       opts:[{v:0,kh:'I — គ្មាន HF',en:'I — No HF'},{v:20,kh:'II — Rales/JVD',en:'II — Rales/JVD'},{v:39,kh:'III — Pulmonary edema',en:'III — Pulmonary edema'},{v:59,kh:'IV — Cardiogenic shock',en:'IV — Cardiogenic shock'}]},
+      {id:'ca',label_kh:'Cardiac Arrest',label_en:'Cardiac Arrest at admission',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:43,kh:'មាន (+43)',en:'Yes (+43)'}]},
+      {id:'st',label_kh:'ST deviation',label_en:'ST deviation on ECG',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:30,kh:'មាន (+30)',en:'Yes (+30)'}]},
+      {id:'enz',label_kh:'Elevated cardiac enzymes',label_en:'Elevated cardiac enzymes',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:15,kh:'មាន (+15)',en:'Yes (+15)'}]},
+    ],
+    interpret(s){
+      let age=parseInt(document.querySelector('[data-fid="age"]')?.value||0);
+      let hr=parseInt(document.querySelector('[data-fid="hr"]')?.value||0);
+      let sbp=parseInt(document.querySelector('[data-fid="sbp"]')?.value||0);
+      let cr=parseFloat(document.querySelector('[data-fid="cr"]')?.value||0);
+      let pts=0;
+      if(age<30)pts+=0;else if(age<40)pts+=8;else if(age<50)pts+=25;else if(age<60)pts+=41;else if(age<70)pts+=58;else if(age<80)pts+=75;else pts+=91;
+      if(hr<50)pts+=0;else if(hr<70)pts+=3;else if(hr<90)pts+=9;else if(hr<110)pts+=15;else if(hr<150)pts+=24;else if(hr<200)pts+=38;else pts+=46;
+      if(sbp<80)pts+=63;else if(sbp<100)pts+=58;else if(sbp<120)pts+=47;else if(sbp<140)pts+=37;else if(sbp<160)pts+=26;else if(sbp<200)pts+=11;else pts+=0;
+      if(cr<0.39)pts+=2;else if(cr<0.79)pts+=5;else if(cr<1.19)pts+=8;else if(cr<1.59)pts+=11;else if(cr<1.99)pts+=14;else if(cr<3.99)pts+=23;else pts+=31;
+      s=pts+s;
+      if(s<109) return {cls:'low',kh_lbl:'Low Risk',en_lbl:'Low Risk',kh_i:`Score ${s} — In-hospital mortality < 1%`,en_i:`Score ${s} — In-hospital mortality < 1%`};
+      if(s<140) return {cls:'mod',kh_lbl:'Moderate Risk',en_lbl:'Moderate Risk',kh_i:`Score ${s} — In-hospital mortality 1–3%`,en_i:`Score ${s} — In-hospital mortality 1–3%`};
+      return {cls:'high',kh_lbl:'High Risk',en_lbl:'High Risk',kh_i:`Score ${s} — In-hospital mortality > 3% — Early invasive strategy`,en_i:`Score ${s} — In-hospital mortality > 3% — Early invasive strategy recommended`};
+    }
+  },
+  // NEUROLOGY
+  {
+    id:'gcs', cat:'neuro', icon:'🧠',
+    name:'Glasgow Coma Scale (GCS)',
+    kh_use:'វាស់កម្រិតស្មារតី',
+    en_use:'Assess level of consciousness',
+    kh_desc:'ប្រើ standard ក្នុង trauma, ICU, neurology ដើម្បីប្រៀបធៀប conscious level',
+    en_desc:'Standard tool for assessing consciousness in trauma, ICU, and neurology settings.',
+    fields:[
+      {id:'e',label_kh:'Eye Opening',label_en:'Eye Opening',
+       opts:[{v:1,kh:'គ្មានប្រតិកម្ម (E1)',en:'None (E1)'},{v:2,kh:'ចំពោះ pain (E2)',en:'To pain (E2)'},{v:3,kh:'ចំពោះ voice (E3)',en:'To voice (E3)'},{v:4,kh:'Spontaneous (E4)',en:'Spontaneous (E4)'}]},
+      {id:'v',label_kh:'Verbal Response',label_en:'Verbal Response',
+       opts:[{v:1,kh:'គ្មាន (V1)',en:'None (V1)'},{v:2,kh:'Incomprehensible sounds (V2)',en:'Incomprehensible sounds (V2)'},{v:3,kh:'Inappropriate words (V3)',en:'Inappropriate words (V3)'},{v:4,kh:'Confused (V4)',en:'Confused (V4)'},{v:5,kh:'Oriented (V5)',en:'Oriented (V5)'}]},
+      {id:'m',label_kh:'Motor Response',label_en:'Motor Response',
+       opts:[{v:1,kh:'គ្មាន (M1)',en:'None (M1)'},{v:2,kh:'Extension (M2)',en:'Extension (M2)'},{v:3,kh:'Abnormal flexion (M3)',en:'Abnormal flexion (M3)'},{v:4,kh:'Withdrawal (M4)',en:'Withdrawal (M4)'},{v:5,kh:'Localizes pain (M5)',en:'Localizes pain (M5)'},{v:6,kh:'Obeys commands (M6)',en:'Obeys commands (M6)'}]},
+    ],
+    interpret(s){
+      if(s>=13) return {cls:'low',kh_lbl:'Mild (13–15)',en_lbl:'Mild (13–15)',kh_i:'GCS 13–15 — Mild impairment',en_i:'GCS 13–15 — Mild impairment'};
+      if(s>=9) return {cls:'mod',kh_lbl:'Moderate (9–12)',en_lbl:'Moderate (9–12)',kh_i:'GCS 9–12 — Moderate impairment — ត្រូវ monitor ដិត',en_i:'GCS 9–12 — Moderate impairment — close monitoring'};
+      return {cls:'high',kh_lbl:'Severe (≤8)',en_lbl:'Severe (≤8)',kh_i:'GCS ≤ 8 — Severe — ត្រូព្យាបាល airway ភ្លាម',en_i:'GCS ≤ 8 — Severe — Airway protection required'};
+    }
+  },
+  // SEPSIS
+  {
+    id:'qsofa', cat:'sepsis', icon:'🔥',
+    name:'qSOFA Score',
+    kh_use:'Sepsis risk outside ICU',
+    en_use:'Quick sepsis identification outside ICU',
+    kh_desc:'ប្រើ screen sepsis ក្នុង ward, ER — លឿន simple — ដោយមិន require lab',
+    en_desc:'Rapid bedside screen for sepsis in non-ICU settings; no labs required.',
+    fields:[
+      {id:'a',label_kh:'Altered mentation (GCS<15)',label_en:'Altered mentation (GCS<15)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'b',label_kh:'RR ≥ 22 /min',label_en:'Respiratory rate ≥ 22/min',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'s',label_kh:'SBP ≤ 100 mmHg',label_en:'Systolic BP ≤ 100 mmHg',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+    ],
+    interpret(s){
+      if(s<2) return {cls:'low',kh_lbl:'Low Risk',en_lbl:'Low Risk',kh_i:'qSOFA < 2 — Sepsis probability ទាប',en_i:'qSOFA < 2 — Low probability of sepsis'};
+      return {cls:'high',kh_lbl:'High Risk',en_lbl:'Sepsis Likely',kh_i:'qSOFA ≥ 2 — Sepsis likely — ត្រូវវាស់ lactate, blood cultures, IV antibiotics',en_i:'qSOFA ≥ 2 — Sepsis likely — Get lactate, blood cultures, start antibiotics'};
+    }
+  },
+  {
+    id:'sofa', cat:'sepsis', icon:'🔥',
+    name:'SOFA Score',
+    kh_use:'Organ failure assessment ក្នុង ICU',
+    en_use:'Sequential organ failure in ICU',
+    kh_desc:'វាស់ organ dysfunction 6 ប្រភេទ ក្នុង ICU — ប្រើព្យាករ mortality',
+    en_desc:'Assesses 6 organ systems to quantify ICU organ failure and predict mortality.',
+    fields:[
+      {id:'r',label_kh:'PaO₂/FiO₂ (Respiration)',label_en:'PaO₂/FiO₂',
+       opts:[{v:0,kh:'≥ 400',en:'≥ 400'},{v:1,kh:'300–399',en:'300–399'},{v:2,kh:'200–299',en:'200–299'},{v:3,kh:'100–199 + ventilated',en:'100–199 on ventilation'},{v:4,kh:'< 100 + ventilated',en:'< 100 on ventilation'}]},
+      {id:'c',label_kh:'Coagulation (Platelets ×10³)',label_en:'Platelets (×10³/μL)',
+       opts:[{v:0,kh:'≥ 150',en:'≥ 150'},{v:1,kh:'100–149',en:'100–149'},{v:2,kh:'50–99',en:'50–99'},{v:3,kh:'20–49',en:'20–49'},{v:4,kh:'< 20',en:'< 20'}]},
+      {id:'l',label_kh:'Liver (Bilirubin mg/dL)',label_en:'Bilirubin (mg/dL)',
+       opts:[{v:0,kh:'< 1.2',en:'< 1.2'},{v:1,kh:'1.2–1.9',en:'1.2–1.9'},{v:2,kh:'2.0–5.9',en:'2.0–5.9'},{v:3,kh:'6.0–11.9',en:'6.0–11.9'},{v:4,kh:'≥ 12.0',en:'≥ 12.0'}]},
+      {id:'cv',label_kh:'Cardiovascular (MAP/Vasopressors)',label_en:'Cardiovascular',
+       opts:[{v:0,kh:'MAP ≥ 70',en:'MAP ≥ 70'},{v:1,kh:'MAP < 70',en:'MAP < 70'},{v:2,kh:'Dopamine ≤ 5 / Dobutamine',en:'Dopamine ≤5 or dobutamine'},{v:3,kh:'Dopamine 5–15 / Epi/Norepi ≤ 0.1',en:'Dopamine >5 or Epi/NE ≤0.1'},{v:4,kh:'Dopamine > 15 / Epi > 0.1',en:'Dopamine >15 or Epi/NE >0.1'}]},
+      {id:'cn',label_kh:'CNS (GCS)',label_en:'CNS (GCS)',
+       opts:[{v:0,kh:'15',en:'15'},{v:1,kh:'13–14',en:'13–14'},{v:2,kh:'10–12',en:'10–12'},{v:3,kh:'6–9',en:'6–9'},{v:4,kh:'< 6',en:'< 6'}]},
+      {id:'k',label_kh:'Renal (Creatinine mg/dL)',label_en:'Creatinine (mg/dL)',
+       opts:[{v:0,kh:'< 1.2',en:'< 1.2'},{v:1,kh:'1.2–1.9',en:'1.2–1.9'},{v:2,kh:'2.0–3.4',en:'2.0–3.4'},{v:3,kh:'3.5–4.9',en:'3.5–4.9'},{v:4,kh:'≥ 5.0',en:'≥ 5.0'}]},
+    ],
+    interpret(s){
+      if(s<=6) return {cls:'low',kh_lbl:'Low Mortality',en_lbl:'Low Mortality',kh_i:`SOFA ${s} — Mortality < 10%`,en_i:`SOFA ${s} — Predicted mortality < 10%`};
+      if(s<=9) return {cls:'mod',kh_lbl:'Moderate',en_lbl:'Moderate Risk',kh_i:`SOFA ${s} — Mortality ~15–20%`,en_i:`SOFA ${s} — Predicted mortality ~15–20%`};
+      if(s<=12) return {cls:'high',kh_lbl:'High Mortality',en_lbl:'High Mortality',kh_i:`SOFA ${s} — Mortality ~40–50%`,en_i:`SOFA ${s} — Predicted mortality ~40–50%`};
+      return {cls:'high',kh_lbl:'Very High Mortality',en_lbl:'Very High Mortality',kh_i:`SOFA ${s} — Mortality > 80%`,en_i:`SOFA ${s} — Predicted mortality > 80%`};
+    }
+  },
+  // PULMONARY
+  {
+    id:'wellspe', cat:'pulm', icon:'🫁',
+    name:'Wells Score (PE)',
+    kh_use:'Probability pulmonary embolism',
+    en_use:'Pre-test probability of pulmonary embolism',
+    kh_desc:'ប្រើមុន CT-PA ដើម្បីវាស់ pretest probability PE — ជំនួយសម្រេចចិត្ត imaging',
+    en_desc:'Calculates pre-test probability of PE to guide decision for CT-PA vs D-dimer.',
+    fields:[
+      {id:'a',label_kh:'Clinical signs DVT',label_en:'Clinical signs of DVT',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:3,kh:'មាន (+3)',en:'Yes (+3)'}]},
+      {id:'b',label_kh:'PE more likely than alternative',label_en:'PE most likely diagnosis',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:3,kh:'មាន (+3)',en:'Yes (+3)'}]},
+      {id:'c',label_kh:'HR > 100 bpm',label_en:'Heart rate > 100 bpm',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1.5,kh:'មាន (+1.5)',en:'Yes (+1.5)'}]},
+      {id:'d',label_kh:'Immobilization/Surgery (4 weeks)',label_en:'Immobilization/Surgery past 4wk',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1.5,kh:'មាន (+1.5)',en:'Yes (+1.5)'}]},
+      {id:'e',label_kh:'Prior DVT/PE',label_en:'Previous DVT or PE',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1.5,kh:'មាន (+1.5)',en:'Yes (+1.5)'}]},
+      {id:'f',label_kh:'Hemoptysis',label_en:'Hemoptysis',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'g',label_kh:'Malignancy (active treatment)',label_en:'Malignancy (active/treated)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+    ],
+    interpret(s){
+      if(s<=1) return {cls:'low',kh_lbl:'Low Probability',en_lbl:'Low Probability (PE ~1.3%)',kh_i:'Score ≤ 1 — PE ~1.3% — D-dimer ក្រោម PERC rule',en_i:'Score ≤ 1 — PE ~1.3% — Use D-dimer ± PERC rule'};
+      if(s<=6) return {cls:'mod',kh_lbl:'Moderate Probability',en_lbl:'Moderate Probability (PE ~16%)',kh_i:'Score 2–6 — PE ~16% — D-dimer ឬ CT-PA',en_i:'Score 2–6 — PE ~16% — D-dimer or proceed to CT-PA'};
+      return {cls:'high',kh_lbl:'High Probability',en_lbl:'High Probability (PE ~41%)',kh_i:'Score > 6 — PE ~41% — CT-PA ភ្លាម',en_i:'Score > 6 — PE ~41% — Proceed to CT-PA directly'};
+    }
+  },
+  {
+    id:'curb65', cat:'pulm', icon:'🫁',
+    name:'CURB-65',
+    kh_use:'Severity community-acquired pneumonia',
+    en_use:'Severity of community-acquired pneumonia',
+    kh_desc:'ជួយសម្រេចចិត្ត admit ឬ discharge CAP patients តាម severity',
+    en_desc:'Guides admission decision in community-acquired pneumonia based on severity.',
+    fields:[
+      {id:'c',label_kh:'Confusion (new)',label_en:'Confusion (new onset)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'u',label_kh:'Urea > 7 mmol/L (BUN > 20)',label_en:'BUN > 20 mg/dL',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'r',label_kh:'RR ≥ 30/min',label_en:'Respiratory rate ≥ 30/min',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'b',label_kh:'BP: SBP < 90 ឬ DBP ≤ 60',label_en:'SBP < 90 or DBP ≤ 60 mmHg',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'a',label_kh:'អាយុ ≥ 65 ឆ្នាំ',label_en:'Age ≥ 65 years',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+    ],
+    interpret(s){
+      if(s<=1) return {cls:'low',kh_lbl:'Low Severity',en_lbl:'Low Severity',kh_i:'CURB-65 0–1 — Mortality ~1.5% — Outpatient treatment',en_i:'CURB-65 0–1 — Mortality ~1.5% — Outpatient treatment appropriate'};
+      if(s===2) return {cls:'mod',kh_lbl:'Moderate Severity',en_lbl:'Moderate',kh_i:'CURB-65 2 — Mortality ~9.2% — Admit ក្នុង hospital',en_i:'CURB-65 2 — Mortality ~9.2% — Hospital admission recommended'};
+      return {cls:'high',kh_lbl:'Severe',en_lbl:'Severe Pneumonia',kh_i:`CURB-65 ${s} — Mortality ~22–57% — Consider ICU admission`,en_i:`CURB-65 ${s} — Mortality ~22–57% — Consider ICU admission`};
+    }
+  },
+  // GI
+  {
+    id:'glasgow_blatch', cat:'gi', icon:'🏥',
+    name:'Glasgow-Blatchford Score',
+    kh_use:'Risk upper GI bleeding',
+    en_use:'Risk stratification upper GI bleeding',
+    kh_desc:'ព្យាករ need for intervention ក្នុង UGIB — ជួយ triage admit vs discharge',
+    en_desc:'Predicts need for intervention in UGIB — guides triage and admission decision.',
+    fields:[
+      {id:'bun',label_kh:'BUN (mg/dL)',label_en:'BUN (mg/dL)',
+       opts:[{v:0,kh:'< 18.2',en:'< 18.2'},{v:2,kh:'18.2–22.4',en:'18.2–22.4'},{v:3,kh:'22.4–28.0',en:'22.4–28.0'},{v:4,kh:'28.0–70.0',en:'28.0–70.0'},{v:6,kh:'≥ 70',en:'≥ 70'}]},
+      {id:'hgb_m',label_kh:'Hgb ប្រុស (g/dL)',label_en:'Hemoglobin male (g/dL)',
+       opts:[{v:0,kh:'≥ 13.0',en:'≥ 13.0'},{v:1,kh:'12.0–12.9',en:'12.0–12.9'},{v:3,kh:'10.0–11.9',en:'10.0–11.9'},{v:6,kh:'< 10.0',en:'< 10.0'}]},
+      {id:'sbp',label_kh:'Systolic BP (mmHg)',label_en:'Systolic BP (mmHg)',
+       opts:[{v:0,kh:'≥ 110',en:'≥ 110'},{v:1,kh:'100–109',en:'100–109'},{v:2,kh:'90–99',en:'90–99'},{v:3,kh:'< 90',en:'< 90'}]},
+      {id:'hr',label_kh:'HR ≥ 100 bpm',label_en:'Heart rate ≥ 100',opts:[{v:0,kh:'< 100',en:'< 100'},{v:1,kh:'≥ 100',en:'≥ 100'}]},
+      {id:'mel',label_kh:'Melena',label_en:'Melena on presentation',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'syn',label_kh:'Syncope',label_en:'Syncope',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:2,kh:'មាន (+2)',en:'Yes (+2)'}]},
+      {id:'liver',label_kh:'Liver disease / HF',label_en:'Liver disease or HF',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:2,kh:'Liver disease (+2)',en:'Liver disease (+2)'},{v:1,kh:'HF (+1)',en:'HF (+1)'}]},
+    ],
+    interpret(s){
+      if(s===0) return {cls:'low',kh_lbl:'Very Low Risk',en_lbl:'Very Low Risk',kh_i:'Score 0 — អាច discharge ដោយ safe ពី ED',en_i:'Score 0 — Safe for discharge from ED without intervention'};
+      if(s<=2) return {cls:'low',kh_lbl:'Low Risk',en_lbl:'Low Risk',kh_i:'Score 1–2 — Low need for intervention',en_i:'Score 1–2 — Low likelihood of needing intervention'};
+      return {cls:'high',kh_lbl:'High Risk',en_lbl:'High Risk',kh_i:`Score ${s} — Endoscopy + Admit ភ្លាម`,en_i:`Score ${s} — High risk — Admit and urgent endoscopy`};
+    }
+  },
+  // RENAL
+  {
+    id:'ckdepi', cat:'renal', icon:'💧',
+    name:'CKD-EPI (eGFR)',
+    kh_use:'Kidney function estimation',
+    en_use:'Estimate GFR in CKD',
+    kh_desc:'Standard formula ដើម្បីគណនា eGFR — ប្រើ stage CKD និង drug dosing',
+    en_desc:'Standard formula for estimating GFR — used for CKD staging and drug dose adjustment.',
+    fields:[
+      {id:'cr',label_kh:'Creatinine (mg/dL)',label_en:'Serum Creatinine (mg/dL)',type:'number',unit:'mg/dL',min:0.1,max:20},
+      {id:'age',label_kh:'អាយុ (ឆ្នាំ)',label_en:'Age (years)',type:'number',unit:'years',min:18,max:120},
+      {id:'sex',label_kh:'ភេទ',label_en:'Sex',opts:[{v:0,kh:'ប្រុស',en:'Male'},{v:1,kh:'ស្ត្រី',en:'Female'}]},
+    ],
+    interpret(s){
+      let cr=parseFloat(document.querySelector('[data-fid="cr"]')?.value||1);
+      let age=parseInt(document.querySelector('[data-fid="age"]')?.value||40);
+      let female=document.querySelector('[data-field="sex"].selected')?.dataset.val==='1';
+      let k=female?0.7:0.9, a=female?-0.241:-0.302;
+      let ratio=cr/k;
+      let egfr=142*Math.pow(Math.min(ratio,1),a)*Math.pow(Math.max(ratio,1),-1.200)*Math.pow(0.9938,age)*(female?1.012:1);
+      egfr=Math.round(egfr);
+      if(egfr>=60) return {cls:'low',kh_lbl:`eGFR: ${egfr} mL/min/1.73m²`,en_lbl:`eGFR: ${egfr} mL/min/1.73m²`,kh_i:egfr>=90?'CKD G1 ឬ Normal — Kidney function normal':'CKD G2 — Mild decrease',en_i:egfr>=90?'CKD G1 or Normal function':'CKD G2 — Mild decrease'};
+      if(egfr>=30) return {cls:'mod',kh_lbl:`eGFR: ${egfr}`,en_lbl:`eGFR: ${egfr}`,kh_i:egfr>=45?'CKD G3a — Mild-moderate decrease':'CKD G3b — Moderate-severe',en_i:egfr>=45?'CKD G3a — Mild-moderate decrease':'CKD G3b — Moderate-severe'};
+      return {cls:'high',kh_lbl:`eGFR: ${egfr}`,en_lbl:`eGFR: ${egfr}`,kh_i:egfr>=15?'CKD G4 — Severe — Nephrology referral':'CKD G5 — Kidney failure — Dialysis consideration',en_i:egfr>=15?'CKD G4 — Severe — Refer to nephrology':'CKD G5 — Kidney failure — Consider dialysis'};
+    }
+  },
+  {
+    id:'aniongap', cat:'renal', icon:'💧',
+    name:'Anion Gap',
+    kh_use:'Metabolic acidosis workup',
+    en_use:'Evaluate metabolic acidosis type',
+    kh_desc:'គណនា anion gap ដើម្បី classify metabolic acidosis (high AG vs normal AG)',
+    en_desc:'Calculates anion gap to classify metabolic acidosis as high-gap or normal-gap.',
+    fields:[
+      {id:'na',label_kh:'Sodium Na⁺ (mEq/L)',label_en:'Sodium (mEq/L)',type:'number',unit:'mEq/L',min:100,max:180},
+      {id:'cl',label_kh:'Chloride Cl⁻ (mEq/L)',label_en:'Chloride (mEq/L)',type:'number',unit:'mEq/L',min:50,max:150},
+      {id:'hco',label_kh:'Bicarbonate HCO₃⁻ (mEq/L)',label_en:'Bicarbonate (mEq/L)',type:'number',unit:'mEq/L',min:1,max:50},
+    ],
+    interpret(s){
+      let na=parseFloat(document.querySelector('[data-fid="na"]')?.value||140);
+      let cl=parseFloat(document.querySelector('[data-fid="cl"]')?.value||104);
+      let hco=parseFloat(document.querySelector('[data-fid="hco"]')?.value||24);
+      let ag=na-cl-hco;
+      if(ag<=12) return {cls:'low',kh_lbl:`AG = ${ag} (Normal)`,en_lbl:`Anion Gap = ${ag} (Normal ≤12)`,kh_i:'Normal AG — Normal gap metabolic acidosis (NAGMA): Diarrhea, RTA, saline excess',en_i:'Normal anion gap acidosis — consider diarrhea, RTA, excess saline'};
+      return {cls:'high',kh_lbl:`AG = ${ag} (Elevated)`,en_lbl:`Anion Gap = ${ag} (High >12)`,kh_i:'High AG — MUDPILES: Methanol, Uremia, DKA, Propylene glycol, INH, Lactic acid, Ethylene glycol, Salicylates',en_i:'High AG acidosis — MUDPILES: Methanol, Uremia, DKA, Lactic acidosis, Ethylene glycol, Salicylates'};
+    }
+  },
+  // SURGERY
+  {
+    id:'rcri', cat:'surgery', icon:'🔪',
+    name:'Revised Cardiac Risk Index',
+    kh_use:'Cardiac risk before non-cardiac surgery',
+    en_use:'Pre-operative cardiac risk assessment',
+    kh_desc:'ប្រើ preoperative ដើម្បីព្យាករ major cardiac events ក្នុង non-cardiac surgery',
+    en_desc:'Predicts risk of major cardiac events (MACE) in non-cardiac surgery patients.',
+    fields:[
+      {id:'a',label_kh:'High-risk surgery',label_en:'High-risk surgery (intraperitoneal/intrathoracic/suprainguinal vascular)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'b',label_kh:'Ischemic heart disease',label_en:'Ischemic heart disease (hx MI, positive stress test, nitrate use)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'c',label_kh:'Congestive heart failure',label_en:'History of congestive heart failure',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'d',label_kh:'Cerebrovascular disease',label_en:'Cerebrovascular disease (stroke/TIA)',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'e',label_kh:'Diabetes on insulin',label_en:'Diabetes requiring insulin',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+      {id:'f',label_kh:'Creatinine > 2.0 mg/dL',label_en:'Preop Creatinine > 2.0 mg/dL',opts:[{v:0,kh:'គ្មាន',en:'No'},{v:1,kh:'មាន (+1)',en:'Yes (+1)'}]},
+    ],
+    interpret(s){
+      const mort=[0.4,1.0,2.4,5.4];
+      const m=mort[Math.min(s,3)];
+      if(s===0) return {cls:'low',kh_lbl:'Very Low Risk',en_lbl:'Very Low Risk',kh_i:`MACE risk ~${m}% — ដំណើរការ surgery បាន`,en_i:`MACE risk ~${m}% — Proceed with surgery`};
+      if(s===1) return {cls:'low',kh_lbl:'Low Risk',en_lbl:'Low Risk',kh_i:`MACE risk ~${m}% — ដំណើរការ surgery បាន`,en_i:`MACE risk ~${m}% — Low risk, proceed`};
+      if(s===2) return {cls:'mod',kh_lbl:'Moderate Risk',en_lbl:'Moderate Risk',kh_i:`MACE risk ~${m}% — ពិចារណា preop cardiac evaluation`,en_i:`MACE risk ~${m}% — Consider preop cardiac evaluation`};
+      return {cls:'high',kh_lbl:'High Risk',en_lbl:'High Risk',kh_i:`MACE risk ≥${m}% — Cardiology consult ពីមុន surgery`,en_i:`MACE risk ≥${m}% — Cardiology consult recommended before surgery`};
+    }
+  },
+  // PSYCH
+  {
+    id:'phq9', cat:'psych', icon:'🧩',
+    name:'PHQ-9',
+    kh_use:'Depression severity screening',
+    en_use:'Screen and measure depression severity',
+    kh_desc:'ប្រើ screen depression ក្នុង primary care — ១ ក្នុង tools ដែល validated ជាង គេ',
+    en_desc:'Most widely validated depression screen for primary care — guides diagnosis and treatment.',
+    fields:[
+      {id:'i1',label_kh:'អារម្មណ៍ទ្រុឌទ្រោម (Depressed mood)',label_en:'Feeling down/depressed/hopeless',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i2',label_kh:'មិនចង់ធ្វើ (Anhedonia)',label_en:'Little interest or pleasure in things',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i3',label_kh:'គេងមិនលក់/គេងច្រើន',label_en:'Trouble sleeping or sleeping too much',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i4',label_kh:'អស់កម្លាំង (Fatigue)',label_en:'Feeling tired or little energy',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i5',label_kh:'ចង់ញ៉ាំ/មិនចង់ញ៉ាំ',label_en:'Poor appetite or overeating',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i6',label_kh:'មានអារម្មណ៍ថាខ្លួនឯងអាក្រក់',label_en:'Feeling bad about yourself / worthless',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i7',label_kh:'ការផ្ដោតអារម្មណ៍មិនល្អ',label_en:'Trouble concentrating on things',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i8',label_kh:'ចលនាយឺត/លឿនជាងធម្មតា',label_en:'Moving/speaking slowly or restless',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+      {id:'i9',label_kh:'គិតពីការស្លាប់/ធ្វើបាបខ្លួន',label_en:'Thoughts of self-harm or death',
+       opts:[{v:0,kh:'មិនសូវ',en:'Not at all'},{v:1,kh:'ពីរបីថ្ងៃ',en:'Several days'},{v:2,kh:'ច្រើនជាងពាក់កណ្ដាល',en:'More than half the days'},{v:3,kh:'ស្ទើរតែរៀងរាល់ថ្ងៃ',en:'Nearly every day'}]},
+    ],
+    interpret(s){
+      if(s<=4) return {cls:'low',kh_lbl:'None–Minimal',en_lbl:'None to Minimal Depression',kh_i:'PHQ-9 0–4 — Reassurance. Monitor if needed.',en_i:'PHQ-9 0–4 — Reassurance and monitoring'};
+      if(s<=9) return {cls:'low',kh_lbl:'Mild Depression',en_lbl:'Mild Depression',kh_i:'PHQ-9 5–9 — Watchful waiting; repeat PHQ-9 in 4 weeks',en_i:'PHQ-9 5–9 — Watchful waiting; repeat in 4 weeks'};
+      if(s<=14) return {cls:'mod',kh_lbl:'Moderate Depression',en_lbl:'Moderate Depression',kh_i:'PHQ-9 10–14 — Treatment plan + psychotherapy ឬ antidepressant',en_i:'PHQ-9 10–14 — Treatment plan with therapy or antidepressant'};
+      if(s<=19) return {cls:'high',kh_lbl:'Moderately Severe',en_lbl:'Moderately Severe',kh_i:'PHQ-9 15–19 — Antidepressant + psychotherapy',en_i:'PHQ-9 15–19 — Antidepressant + psychotherapy recommended'};
+      return {cls:'high',kh_lbl:'Severe Depression',en_lbl:'Severe Depression',kh_i:'PHQ-9 20–27 — Refer psychiatry ភ្លាម — Assess suicidality',en_i:'PHQ-9 20–27 — Immediate psychiatry referral — Assess suicidality'};
+    }
+  },
+  // LAB
+  {
+    id:'map', cat:'lab', icon:'🔢',
+    name:'Mean Arterial Pressure (MAP)',
+    kh_use:'Organ perfusion pressure',
+    en_use:'Calculate organ perfusion pressure',
+    kh_desc:'MAP គឺ pressure ជា average ដែល organs ទទួល — MAP ≥ 65 ចំបាច់ ក្នុង sepsis',
+    en_desc:'MAP reflects mean perfusion pressure to organs — MAP ≥ 65 is the target in sepsis.',
+    fields:[
+      {id:'sbp',label_kh:'Systolic BP (mmHg)',label_en:'Systolic BP (mmHg)',type:'number',unit:'mmHg',min:40,max:300},
+      {id:'dbp',label_kh:'Diastolic BP (mmHg)',label_en:'Diastolic BP (mmHg)',type:'number',unit:'mmHg',min:20,max:200},
+    ],
+    interpret(s){
+      let sbp=parseInt(document.querySelector('[data-fid="sbp"]')?.value||120);
+      let dbp=parseInt(document.querySelector('[data-fid="dbp"]')?.value||80);
+      let map=Math.round(dbp+(sbp-dbp)/3);
+      if(map>=65) return {cls:'low',kh_lbl:`MAP = ${map} mmHg`,en_lbl:`MAP = ${map} mmHg`,kh_i:`MAP ≥ 65 — Adequate perfusion pressure`,en_i:`MAP ${map} mmHg — Adequate organ perfusion`};
+      if(map>=50) return {cls:'mod',kh_lbl:`MAP = ${map} mmHg`,en_lbl:`MAP = ${map} mmHg`,kh_i:`MAP 50–64 — Suboptimal — Monitor + address cause`,en_i:`MAP ${map} — Suboptimal perfusion — Address underlying cause`};
+      return {cls:'high',kh_lbl:`MAP = ${map} mmHg`,en_lbl:`MAP = ${map} mmHg`,kh_i:`MAP < 50 — Critical — Vasopressor ឬ fluid resuscitation ភ្លាម`,en_i:`MAP < 50 — Critical — Vasopressor support or fluid resuscitation urgently`};
+    }
+  },
+  {
+    id:'qtc', cat:'lab', icon:'🔢',
+    name:'QTc Calculation (Bazett)',
+    kh_use:'Correct QT interval for heart rate',
+    en_use:'Correct QT interval for heart rate',
+    kh_desc:'QTc ធម្មតា < 440ms ប្រុស, < 460ms ស្ត្រី — QTc ≥ 500ms មានហានិភ័យ TdP',
+    en_desc:'QTc normal < 440ms (male), < 460ms (female) — QTc ≥ 500ms risks Torsades de Pointes.',
+    fields:[
+      {id:'qt',label_kh:'QT interval (ms)',label_en:'QT interval (ms)',type:'number',unit:'ms',min:200,max:800},
+      {id:'hr',label_kh:'Heart Rate (bpm)',label_en:'Heart rate (bpm)',type:'number',unit:'bpm',min:20,max:300},
+      {id:'sex',label_kh:'ភេទ',label_en:'Sex',opts:[{v:0,kh:'ប្រុស',en:'Male'},{v:1,kh:'ស្ត្រី',en:'Female'}]},
+    ],
+    interpret(s){
+      let qt=parseInt(document.querySelector('[data-fid="qt"]')?.value||400);
+      let hr=parseInt(document.querySelector('[data-fid="hr"]')?.value||70);
+      let female=document.querySelector('[data-field="sex"].selected')?.dataset.val==='1';
+      let rr=60/hr;
+      let qtc=Math.round(qt/Math.sqrt(rr));
+      let limit=female?460:440;
+      if(qtc<limit) return {cls:'low',kh_lbl:`QTc = ${qtc} ms`,en_lbl:`QTc = ${qtc} ms`,kh_i:`QTc ${qtc}ms — Normal (< ${limit}ms) — ហានិភ័យ TdP ទាប`,en_i:`QTc ${qtc}ms — Normal (< ${limit}ms) — Low TdP risk`};
+      if(qtc<500) return {cls:'mod',kh_lbl:`QTc = ${qtc} ms (Borderline)`,en_lbl:`QTc = ${qtc} ms (Borderline)`,kh_i:`QTc ${qtc}ms — Prolonged — Review QT-prolonging drugs`,en_i:`QTc ${qtc}ms — Borderline prolonged — Review medications`};
+      return {cls:'high',kh_lbl:`QTc = ${qtc} ms (DANGER)`,en_lbl:`QTc = ${qtc} ms — HIGH RISK`,kh_i:`QTc ≥ 500ms — High risk TdP — Stop QT-prolonging drugs ភ្លាម`,en_i:`QTc ≥ 500ms — High Torsades risk — Discontinue QT-prolonging drugs`};
+    }
+  },
+  // OB/GYN
+  {
+    id:'edd', cat:'obgyn', icon:'🤰',
+    name:'Estimated Due Date (Naegele)',
+    kh_use:'Estimate pregnancy due date',
+    en_use:'Calculate estimated delivery date',
+    kh_desc:'Naegele rule — LMP + 280 ថ្ងៃ — ប្រើ estimate EDD ពី last menstrual period',
+    en_desc:'Naegele rule — LMP + 280 days — standard method to estimate expected delivery date.',
+    fields:[
+      {id:'lmp',label_kh:'ថ្ងៃ LMP (YYYY-MM-DD)',label_en:'Last Menstrual Period (YYYY-MM-DD)',type:'date'},
+    ],
+    interpret(s){
+      let lmp=document.querySelector('[data-fid="lmp"]')?.value;
+      if(!lmp) return {cls:'info',kh_lbl:'ចូលថ្ងៃ LMP',en_lbl:'Enter LMP date',kh_i:'',en_i:''};
+      let d=new Date(lmp);
+      d.setDate(d.getDate()+280);
+      let edd=d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+      let weeks=Math.floor((new Date()-new Date(lmp))/(7*86400000));
+      return {cls:'info',kh_lbl:`EDD: ${edd}`,en_lbl:`EDD: ${edd}`,kh_i:`មានផ្ទៃពោះ ~${weeks} សប្ដាហ៍ (${Math.round(weeks*7/30.5)} ខែ)`,en_i:`Currently ~${weeks} weeks pregnant (${Math.round(weeks*7/30.5)} months)`};
+    }
+  },
+];
+
+// ── STATE ──
+let activeCat='all';
+let currentScore=null;
+let selections={};
+
+// ── RENDER CATEGORIES ──
+function renderCats(){
+  const bar=document.getElementById('catBar');
+  bar.innerHTML=categories.map(c=>`
+    <div class="cat-pill ${activeCat===c.id?'active':''}" data-cat="${c.id}" onclick="setCat('${c.id}')">
+      ${c.icon} ${lang==='kh'?c.kh:c.en}
+    </div>
+  `).join('');
+}
+
+function setCat(id){
+  activeCat=id;
+  renderCats();
+  renderList();
+}
+
+// ── RENDER LIST ──
+function renderList(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const list=document.getElementById('scoreList');
+  const filtered=scores.filter(s=>{
+    const catOk=activeCat==='all'||s.cat===activeCat;
+    const searchOk=!q||s.name.toLowerCase().includes(q)||(lang==='kh'?s.kh_use:s.en_use).toLowerCase().includes(q)||s.cat.includes(q);
+    return catOk&&searchOk;
+  });
+  if(!filtered.length){
+    list.innerHTML=`<div class="no-results">${lang==='kh'?'មិនមាន Score ត្រូវគ្នា':'No matching scores found'}</div>`;
+    return;
+  }
+  list.innerHTML=filtered.map(s=>`
+    <div class="score-card" onclick="openScore('${s.id}')">
+      <div class="score-icon" style="background:${catColors[s.cat]}22">${s.icon}</div>
+      <div class="score-body">
+        <div class="score-name">${s.name}</div>
+        <div class="score-use">${lang==='kh'?s.kh_use:s.en_use}</div>
+      </div>
+      <div class="score-arrow">›</div>
+    </div>
+  `).join('');
+}
+
+function filterScores(){renderList();}
+
+// ── OPEN SCORE MODAL ──
+function openScore(id){
+  currentScore=scores.find(s=>s.id===id);
+  if(!currentScore) return;
+  selections={};
+  const s=currentScore;
+  const col=catColors[s.cat];
+
+  document.getElementById('mIcon').style.background=col+'22';
+  document.getElementById('mIcon').textContent=s.icon;
+  document.getElementById('mTitle').textContent=s.name;
+  document.getElementById('mSubtitle').textContent=lang==='kh'?s.kh_use:s.en_use;
+
+  let html=`
+    <div class="info-box">
+      <h4>${lang==='kh'?'ប្រើសម្រាប់':'Clinical Use'}</h4>
+      <p>${lang==='kh'?s.kh_desc:s.en_desc}</p>
+    </div>
+  `;
+
+  s.fields.forEach(f=>{
+    html+=`<div class="field-group"><label class="field-label">${lang==='kh'?f.label_kh:f.label_en}</label>`;
+    if(f.type==='number'){
+      html+=`<div class="number-input-wrap">
+        <input class="number-input" type="number" data-fid="${f.id}" min="${f.min||0}" max="${f.max||999}" placeholder="0" step="${f.id==='cr'||f.id==='qt'?'0.1':'1'}">
+        <span class="number-unit">${f.unit||''}</span>
+      </div>`;
+    } else if(f.type==='date'){
+      html+=`<div class="number-input-wrap">
+        <input class="number-input" type="date" data-fid="${f.id}" style="color-scheme:dark">
+      </div>`;
+    } else {
+      html+=`<div class="radio-group">`;
+      f.opts.forEach(o=>{
+        html+=`<div class="radio-option" data-field="${f.id}" data-val="${o.v}" onclick="selectOpt(this,'${f.id}',${o.v})">
+          <div class="radio-dot"></div>
+          <div class="radio-text">
+            <div class="main">${lang==='kh'?o.kh:o.en}</div>
+          </div>
+          <div class="radio-pts">${o.v>0?'+'+o.v:o.v}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+
+  html+=`<button class="calc-btn" onclick="calculate()">${lang==='kh'?'គណនា Score':'Calculate Score'}</button>`;
+  html+=`<div class="result-box" id="resultBox"></div>`;
+
+  document.getElementById('mBody').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function selectOpt(el,field,val){
+  document.querySelectorAll(`[data-field="${field}"]`).forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  selections[field]=val;
+}
+
+function calculate(){
+  const s=currentScore;
+  let total=0;
+  let allFilled=true;
+
+  s.fields.forEach(f=>{
+    if(f.type==='number'||f.type==='date'){
+      // handled in interpret
+    } else {
+      if(selections[f.id]!==undefined) total+=Number(selections[f.id]);
+      else allFilled=false;
+    }
+  });
+
+  const res=s.interpret(total);
+  const box=document.getElementById('resultBox');
+  box.className=`result-box show result-${res.cls}`;
+  box.innerHTML=`
+    <div class="result-score">${total}</div>
+    <div class="result-label">${lang==='kh'?res.kh_lbl:res.en_lbl}</div>
+    <div class="result-interp">${lang==='kh'?res.kh_i:res.en_i}</div>
+    <div class="result-action">${lang==='kh'?'⚠️ ប្រើជំនួយសម្រេចចិត្ត — មិនជំនួស clinical judgment':'⚠️ Clinical decision support only — does not replace clinical judgment'}</div>
+  `;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function closeModalOutside(e){
+  if(e.target===document.getElementById('modalOverlay')) closeModal();
+}
+
+// ── INIT ──
+renderCats();
+renderList();
+  // Service Worker
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
 </body>
 </html>
